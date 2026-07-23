@@ -4,19 +4,21 @@
 #SBATCH --error=seqkit_stats_%j.err
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=16G
-#SBATCH --partition=day
+#SBATCH --partition=medium
 
 # =============================================================================
 # seqkit_stats.sh
-# Run seqkit stats on one or more .fastq / .fastq.gz files.
+# Run seqkit stats on one or more FASTQ or FASTA files.
 #
 # Usage:
 #   sbatch seqkit_stats.sh <input_path> <output_dir>
 #   bash   seqkit_stats.sh <input_path> <output_dir>
 #
 # Arguments:
-#   $1  input_path   Path to a single .fastq/.fastq.gz file, OR a directory
-#                    containing .fastq and/or .fastq.gz files (searched recursively).
+#   $1  input_path   Path to a single FASTQ/FASTA file, OR a directory
+#                    containing FASTQ and/or FASTA files (searched recursively).
+#                    Supported extensions: .fastq, .fastq.gz, .fq, .fq.gz,
+#                                         .fasta, .fasta.gz, .fa, .fa.gz
 #   $2  output_dir   Directory to write results into (created if absent).
 #
 # Outputs (written to <output_dir>/):
@@ -27,7 +29,7 @@
 set -euo pipefail
 
 source "$(conda info --base)/etc/profile.d/conda.sh"
-conda activate seqkit
+conda activate read_qc
 
 # ---------------------------------------------------------------------------
 # 1. Argument validation
@@ -52,18 +54,20 @@ declare -a FASTQ_FILES
 
 if [[ -f "${INPUT_PATH}" ]]; then
     # Single file supplied — validate extension
-    if [[ "${INPUT_PATH}" =~ \.(fastq|fastq\.gz|fq|fq\.gz)$ ]]; then
+    if [[ "${INPUT_PATH}" =~ \.(fastq|fastq\.gz|fq|fq\.gz|fasta|fasta\.gz|fa|fa\.gz)$ ]]; then
         FASTQ_FILES=("${INPUT_PATH}")
     else
-        echo "[ERROR] File does not appear to be a FASTQ: ${INPUT_PATH}" >&2
+        echo "[ERROR] File does not appear to be a FASTQ or FASTA: ${INPUT_PATH}" >&2
         exit 1
     fi
 elif [[ -d "${INPUT_PATH}" ]]; then
-    # Directory supplied — find all FASTQ files recursively
+    # Directory supplied — find all FASTQ/FASTA files recursively
     mapfile -t FASTQ_FILES < <(
         find "${INPUT_PATH}" -type f \
-            \( -name "*.fastq" -o -name "*.fastq.gz" \
-               -o -name "*.fq"    -o -name "*.fq.gz"    \) \
+            \( -name "*.fastq"    -o -name "*.fastq.gz" \
+               -o -name "*.fq"    -o -name "*.fq.gz"    \
+               -o -name "*.fasta" -o -name "*.fasta.gz" \
+               -o -name "*.fa"    -o -name "*.fa.gz"    \) \
         | sort
     )
 else
@@ -72,7 +76,7 @@ else
 fi
 
 if [[ ${#FASTQ_FILES[@]} -eq 0 ]]; then
-    echo "[ERROR] No .fastq / .fastq.gz files found under: ${INPUT_PATH}" >&2
+    echo "[ERROR] No FASTQ or FASTA files found under: ${INPUT_PATH}" >&2
     exit 1
 fi
 
