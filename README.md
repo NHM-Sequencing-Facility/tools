@@ -8,15 +8,17 @@ Collection of tools and scripts for a range of bioinformatics tasks.
 
 ### seqkit_stats.sh
 ```
-Calculate simple summary stats for a collection of N .fastq/.fastq.gz files.
+Calculate simple summary stats for a collection of .fasta/.fastq/.fastq.gz files.
 
 Usage:
   sbatch seqkit_stats.sh <input_path> <output_dir>
   bash   seqkit_stats.sh <input_path> <output_dir>
 
 Arguments:
-  $1  input_path   Path to a single .fastq/.fastq.gz file, OR a directory
-                   containing .fastq and/or .fastq.gz files (searched recursively).
+  $1  input_path   Path to a single FASTQ/FASTA file, OR a directory
+                   containing FASTQ and/or FASTA files (searched recursively).
+                   Supported extensions: .fastq, .fastq.gz, .fq, .fq.gz,
+                                        .fasta, .fasta.gz, .fa, .fa.gz
   $2  output_dir   Directory to write results into (created if absent).
 
 Outputs (written to <output_dir>/):
