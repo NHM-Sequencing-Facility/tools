@@ -28,6 +28,32 @@ Outputs (written to <output_dir>/):
 Requirements: seqkit installed in conda environment
 ```
 
+### meta-spades.sh
+```
+Runs SPAdes in metagenomic mode (--meta) on paired-end reads.
+
+Usage:
+    sbatch meta-spades.sh <R1> <R2> <OUTPUT_DIR>
+
+Arguments:
+    R1            Path to forward (R1) FASTQ file
+    R2            Path to reverse (R2) FASTQ file
+    OUTPUT_DIR    Directory to write SPAdes output into. Will be created
+                  if it does not already exist.
+
+SLURM:
+    --cpus-per-task is passed directly to SPAdes --threads.
+    Adjust --mem as needed depending on input size.
+
+Dependencies:
+    Conda environment: <CONDA_ENV_NAME>  (must contain SPAdes >4.2.0)
+
+Example:
+    sbatch meta-spades.sh \
+        UK006_1.fastq \
+        UK006_2.fastq \
+        spades_out/UK006
+```
 
 ## long-read
 
