@@ -55,6 +55,42 @@ Example:
         spades_out/UK006
 ```
 
+### bases2fastq.slurm
+```
+Runs ElementBioscience's Bases2Fastq tool to basecall and demultiplex AVITI24 sequence data generated at the NHM.
+Usage:
+    sbatch bases2fastq.slurm
+
+Arguments:
+    INPUT_DIR: Input directory path to raw AVITI24 sequencing run output
+    OUTPUT_DIR: Path to desired output directory
+
+    Both required paths are set within the script itself.
+
+SLURM:
+    --cpus-per-task is passed directly to SPAdes --threads.
+    Adjust --mem as needed depending on input size.
+
+Dependencies:
+    Conda env (called 'singularity' by default) with singualrity installed.
+    Bases2Fastq.sif (see below)
+
+Set up:
+    Since ElemBio only provides a Docker container and a static binary version of bases2fastq,
+    both of which cannot be installed/run on the HPC cluster without admin rights, using her computer,
+    Silvia converted the Docker container into a Singularity image,
+    renamed it using the software version for accountability, and finally moved the image to the HPC cluster:
+
+    conda activate singularity
+    singularity pull docker://elembio/bases2fastq
+    singularity exec bases2fastq_latest.sif bases2fastq --version
+    # bases2fastq version 2.2.1.2035424704, use subject to license available at elementbiosciences.com
+    mv bases2fastq_latest.sif bases2fastq_[VERSION].sif
+    # example version = 2.3.0
+```
+
+
+
 ## long-read
 
 ### nanoplot.sh
