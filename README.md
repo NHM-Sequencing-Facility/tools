@@ -58,6 +58,7 @@ Example:
 ### bases2fastq.slurm
 ```
 Runs ElementBioscience's Bases2Fastq tool to basecall and demultiplex AVITI24 sequence data generated at the NHM.
+
 Usage:
     sbatch bases2fastq.slurm
 
@@ -88,6 +89,32 @@ Set up:
     mv bases2fastq_latest.sif bases2fastq_[VERSION].sif
     # example version = 2.3.0
 ```
+
+### mapNstat.sh
+```
+Runs PE reads (fastq/fastq.gz format) against provided reference sequence using BWA-mem,
+and then computes mapping statistics using samtools flagstat.
+
+Usage:
+    sbatch mapNstat.sh -r ref.fasta -s samples.csv -o results -e mapping
+
+Arguments:
+    -r    reference FASTA sequence. If it is not already indexed, the script will auto-detect
+          and run bwa index first.
+    -s    samplesheet CSV containing JUST the following column headings: sample,R1,R2
+            sample = sample ID
+            R1 = path to forward read file
+            R2 = path to reverse read file
+    -o    Output directory path
+    -e    Path to conda environment contianing dependencies to activate (if not already activated)
+
+Dependencies:
+    Conda env containing bwa (v0.7.19) and samtools (v1.24)
+
+NOTE: samples are processed sequentially in a single job, so the walltime
+needs to cover ALL samples - check your partition's limit ('day' above).
+```
+
 
 
 
