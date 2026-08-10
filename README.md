@@ -58,23 +58,37 @@ Example:
 ### bases2fastq.slurm
 ```
 Runs ElementBioscience's Bases2Fastq tool to basecall and demultiplex AVITI24 sequence data generated at the NHM.
+Can accept an optional external RunManifest.csv file, or fall back to bases2fastq's own auto-detection of the
+manifest inside the run folder.
 
 Usage:
-    sbatch bases2fastq.slurm
+    sbatch bases2fastq.slurm                          # manifest auto-detected
+    sbatch bases2fastq.slurm /path/to/manifest.csv    # manifest supplied
 
 Arguments:
-    INPUT_DIR: Input directory path to raw AVITI24 sequencing run output
-    OUTPUT_DIR: Path to desired output directory
-
+    MANIFEST (optional): Path to an external run manifest CSV, given as the first command-line
+        argument. May live anywhere readable; it is bind-mounted into the container as a single
+        file. If omitted, no --run-manifest flag is passed and bases2fastq auto-detects.
+    INPUT_DIR: Input directory path to raw AVITI24 sequencing run output. Must be under /mbl/share.
+    OUTPUT_DIR: Path to desired output directory. Must be under /hpc/groups, and must not already
+        exist as a non-empty directory.
     Both required paths are set within the script itself.
 
 SLURM:
-    --cpus-per-task is passed directly to SPAdes --threads.
+    --cpus-per-task is passed directly to bases2fastq --num-threads.
     Adjust --mem as needed depending on input size.
 
+Behaviour notes:
+    /mbl/share and /hpc/groups are bind-mounted into the container at /mnt1 and /mnt2 respectively,
+    and INPUT_DIR/OUTPUT_DIR are rewritten to the corresponding container paths. The script exits
+    with an error if either path falls outside its expected root.
+    The script refuses to run if OUTPUT_DIR already exists and is non-empty, since bases2fastq may
+    partially overwrite existing results rather than failing.
+    The bases2fastq exit code is captured and propagated; "Run complete" is only printed on success.
+
 Dependencies:
-    Conda env (called 'singularity' by default) with singualrity installed.
-    Bases2Fastq.sif (see below)
+    Conda env (called 'singularity' by default) with singularity installed.
+    bases2fastq_[VERSION].sif (see below). The path is set via the SIF variable in the script.
 
 Set up:
     Since ElemBio only provides a Docker container and a static binary version of bases2fastq,
