@@ -8,8 +8,8 @@
 # ============================================================================
 # USAGE
 # ============================================================================
-#   sbatch run_bases2fastq.sh                          # manifest auto-detected
-#   sbatch run_bases2fastq.sh /path/to/manifest.csv    # manifest supplied
+#   sbatch bases2fastq.sh                          # manifest auto-detected
+#   sbatch bases2fastq.sh /path/to/manifest.csv    # manifest supplied
 #
 # If no manifest path is given, bases2fastq falls back to its own detection of
 # the run manifest inside the AVITI run folder.
