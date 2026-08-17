@@ -129,6 +129,30 @@ NOTE: samples are processed sequentially in a single job, so the walltime
 needs to cover ALL samples - check your partition's limit ('day' above).
 ```
 
+### illumina_qc_pipeline.sh
+This pipeline takes as input a runfolder from an Illumina machine and does:
+- basecalling
+- adapter/quality/length read trimming
+- QC before and after trimming
+
+Requisites:
+- RunInfo.xml file must be in the run folder
+- SampleSheet.csv file must be in the run folder and contain the adapters
+- path to input runfolder and output folder
+
+Before running it, you should setup the conda environment (only once):
+conda create --name bash_illumina_pipeline
+conda activate bash_illumina_pipeline
+conda install -c bih-cubi bcl2fastq2
+conda install -c bioconda fastqc skewer trimmomatic
+conda install -c conda-forge -c bioconda multiqc
+conda install -c conda-forge dos2unix
+
+How to run it - e.g.:
+bash pipeline.sh [Input_runfolder] [Output_runfolder]
+
+
+
 
 
 
