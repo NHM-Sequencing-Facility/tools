@@ -11,8 +11,20 @@
 # Run seqkit stats on one or more FASTQ or FASTA files.
 #
 # Usage:
-#   sbatch seqkit_stats.sh <input_path> <output_dir>
-#   bash   seqkit_stats.sh <input_path> <output_dir>
+#   sbatch seqkit_stats.sh [-l <list.txt>] <input_path> <output_dir>
+#   bash   seqkit_stats.sh [-l <list.txt>] <input_path> <output_dir>
+#
+# Options:
+#   -l <list.txt>    Plain-text file of strings, one per line. Only files whose
+#                    *basename* contains one of these strings are processed.
+#                    Matching is case-sensitive substring matching, and strings
+#                    are treated literally (no globbing). Blank lines and lines
+#                    beginning with '#' are ignored, as is surrounding
+#                    whitespace and trailing carriage returns.
+#                    Requires <input_path> to be a directory.
+#                    Strings matching no files raise a warning; the run
+#                    continues with whatever did match.
+#   -h               Show this help text and exit.
 #
 # Arguments:
 #   $1  input_path   Path to a single FASTQ/FASTA file, OR a directory
@@ -24,6 +36,13 @@
 # Outputs (written to <output_dir>/):
 #   seqkit_stats.tsv          Full seqkit stats table (TSV, all metrics).
 #   seqkit_stats_summary.txt  Human-readable run summary.
+#
+# Examples:
+#   # Everything under a directory
+#   bash seqkit_stats.sh /data/run3588/fastq results/
+#
+#   # Only the samples named in samples.txt
+#   bash seqkit_stats.sh -l samples.txt /data/run3588/fastq results/
 # =============================================================================
 
 set -euo pipefail
@@ -31,11 +50,27 @@ set -euo pipefail
 source "$(conda info --base)/etc/profile.d/conda.sh"
 conda activate read_qc
 
+usage() {
+    sed -n '10,50p' "$0" | sed 's/^# \{0,1\}//'
+}
+
 # ---------------------------------------------------------------------------
-# 1. Argument validation
+# 1. Option parsing & argument validation
 # ---------------------------------------------------------------------------
+LIST_FILE=""
+
+while getopts ":l:h" opt; do
+    case "${opt}" in
+        l) LIST_FILE="${OPTARG}" ;;
+        h) usage; exit 0 ;;
+        :) echo "[ERROR] Option -${OPTARG} requires an argument." >&2; exit 1 ;;
+        \?) echo "[ERROR] Unknown option: -${OPTARG}" >&2; exit 1 ;;
+    esac
+done
+shift $((OPTIND - 1))
+
 if [[ $# -lt 2 ]]; then
-    echo "[ERROR] Usage: $(basename "$0") <input_path> <output_dir>" >&2
+    echo "[ERROR] Usage: $(basename "$0") [-l <list.txt>] <input_path> <output_dir>" >&2
     exit 1
 fi
 
@@ -47,10 +82,23 @@ if [[ ! -e "${INPUT_PATH}" ]]; then
     exit 1
 fi
 
+if [[ -n "${LIST_FILE}" ]]; then
+    if [[ ! -f "${LIST_FILE}" ]]; then
+        echo "[ERROR] List file does not exist or is not a regular file: ${LIST_FILE}" >&2
+        exit 1
+    fi
+    if [[ ! -d "${INPUT_PATH}" ]]; then
+        echo "[ERROR] -l requires <input_path> to be a directory (got: ${INPUT_PATH})" >&2
+        exit 1
+    fi
+fi
+
 # ---------------------------------------------------------------------------
 # 2. Build file list
 # ---------------------------------------------------------------------------
-declare -a FASTQ_FILES
+declare -a FASTQ_FILES=()
+declare -a MATCH_REPORT=()      # "<pattern>\t<n_files>" lines, for the summary
+declare -a UNMATCHED=()
 
 if [[ -f "${INPUT_PATH}" ]]; then
     # Single file supplied — validate extension
@@ -62,7 +110,8 @@ if [[ -f "${INPUT_PATH}" ]]; then
     fi
 elif [[ -d "${INPUT_PATH}" ]]; then
     # Directory supplied — find all FASTQ/FASTA files recursively
-    mapfile -t FASTQ_FILES < <(
+    declare -a ALL_FILES=()
+    mapfile -t ALL_FILES < <(
         find "${INPUT_PATH}" -type f \
             \( -name "*.fastq"    -o -name "*.fastq.gz" \
                -o -name "*.fq"    -o -name "*.fq.gz"    \
@@ -70,13 +119,61 @@ elif [[ -d "${INPUT_PATH}" ]]; then
                -o -name "*.fa"    -o -name "*.fa.gz"    \) \
         | sort
     )
+
+    if [[ -z "${LIST_FILE}" ]]; then
+        FASTQ_FILES=("${ALL_FILES[@]}")
+    else
+        # ---- Filter mode: keep only files matching a string from LIST_FILE ----
+        declare -a PATTERNS=()
+        while IFS= read -r line || [[ -n "${line}" ]]; do
+            line="${line%$'\r'}"                       # strip CRLF line endings
+            line="${line#"${line%%[![:space:]]*}"}"    # strip leading whitespace
+            line="${line%"${line##*[![:space:]]}"}"    # strip trailing whitespace
+            [[ -z "${line}" ]] && continue             # skip blank lines
+            [[ "${line}" == \#* ]] && continue         # skip comments
+            PATTERNS+=("${line}")
+        done < "${LIST_FILE}"
+
+        if [[ ${#PATTERNS[@]} -eq 0 ]]; then
+            echo "[ERROR] List file contains no usable strings: ${LIST_FILE}" >&2
+            exit 1
+        fi
+
+        declare -A KEEP=()
+        for pat in "${PATTERNS[@]}"; do
+            n_hits=0
+            for f in "${ALL_FILES[@]}"; do
+                base="$(basename "${f}")"
+                if [[ "${base}" == *"${pat}"* ]]; then
+                    KEEP["${f}"]=1
+                    n_hits=$((n_hits + 1))
+                fi
+            done
+            MATCH_REPORT+=("$(printf '%s\t%d' "${pat}" "${n_hits}")")
+            if [[ ${n_hits} -eq 0 ]]; then
+                echo "[WARN] No files matched string: '${pat}'" >&2
+                UNMATCHED+=("${pat}")
+            fi
+        done
+
+        # Rebuild in the original sorted order, de-duplicated
+        for f in "${ALL_FILES[@]}"; do
+            if [[ -n "${KEEP[${f}]:-}" ]]; then
+                FASTQ_FILES+=("${f}")
+            fi
+        done
+    fi
 else
     echo "[ERROR] Input path is neither a file nor a directory: ${INPUT_PATH}" >&2
     exit 1
 fi
 
 if [[ ${#FASTQ_FILES[@]} -eq 0 ]]; then
-    echo "[ERROR] No FASTQ or FASTA files found under: ${INPUT_PATH}" >&2
+    if [[ -n "${LIST_FILE}" ]]; then
+        echo "[ERROR] No FASTQ or FASTA files under '${INPUT_PATH}' matched any string in '${LIST_FILE}'." >&2
+    else
+        echo "[ERROR] No FASTQ or FASTA files found under: ${INPUT_PATH}" >&2
+    fi
     exit 1
 fi
 
@@ -109,6 +206,7 @@ echo "  seqkit stats run"
 echo "============================================================"
 echo "  Script       : $0"
 echo "  Input path   : ${INPUT_PATH}"
+echo "  List file    : ${LIST_FILE:-N/A (no filtering)}"
 echo "  Output dir   : ${OUTPUT_DIR}"
 echo "  Files found  : ${#FASTQ_FILES[@]}"
 echo "  Threads      : ${THREADS}"
@@ -117,6 +215,17 @@ echo "  Start time   : $(date '+%Y-%m-%d %H:%M:%S')"
 echo "  SLURM job ID : ${SLURM_JOB_ID:-N/A (interactive)}"
 echo "============================================================"
 echo ""
+
+if [[ -n "${LIST_FILE}" ]]; then
+    echo "--- String match counts ---"
+    printf '  %s\n' "${MATCH_REPORT[@]}" | column -t -s $'\t'
+    if [[ ${#UNMATCHED[@]} -gt 0 ]]; then
+        echo ""
+        echo "  [WARN] ${#UNMATCHED[@]} string(s) matched no files: ${UNMATCHED[*]}"
+    fi
+    echo ""
+fi
+
 printf '  %s\n' "${FASTQ_FILES[@]}"
 echo ""
 
@@ -149,9 +258,20 @@ echo "[INFO] Stats written to: ${OUTPUT_TSV}"
     echo "seqkit stats summary"
     echo "Run date   : $(date '+%Y-%m-%d %H:%M:%S')"
     echo "Input path : ${INPUT_PATH}"
+    echo "List file  : ${LIST_FILE:-N/A (no filtering)}"
     echo "seqkit     : ${SEQKIT_VERSION}"
     echo "Files      : ${#FASTQ_FILES[@]}"
     echo ""
+    if [[ -n "${LIST_FILE}" ]]; then
+        echo "String match counts:"
+        printf '  %s\n' "${MATCH_REPORT[@]}" | column -t -s $'\t'
+        if [[ ${#UNMATCHED[@]} -gt 0 ]]; then
+            echo ""
+            echo "WARNING: the following string(s) matched no files:"
+            printf '  %s\n' "${UNMATCHED[@]}"
+        fi
+        echo ""
+    fi
     # Pretty-print the TSV with column alignment
     column -t -s $'\t' "${OUTPUT_TSV}"
 } > "${OUTPUT_SUMMARY}"
