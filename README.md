@@ -11,8 +11,20 @@ Collection of tools and scripts for a range of bioinformatics tasks.
 Calculate simple summary stats for a collection of .fasta/.fastq/.fastq.gz files.
 
 Usage:
-  sbatch seqkit_stats.sh <input_path> <output_dir>
-  bash   seqkit_stats.sh <input_path> <output_dir>
+  sbatch seqkit_stats.sh [-l <list.txt>] <input_path> <output_dir>
+  bash   seqkit_stats.sh [-l <list.txt>] <input_path> <output_dir>
+
+Options:
+  -l <list.txt>    Plain-text file of strings, one per line. Only files whose
+                   *basename* contains one of these strings are processed.
+                   Matching is case-sensitive substring matching, and strings
+                   are treated literally (no globbing). Blank lines and lines
+                   beginning with '#' are ignored, as is surrounding
+                   whitespace and trailing returns.
+                   Requires <input_path> to be a directory.
+                   Strings matching no files raise a warning; the run
+                   continues with whatever did match.
+  -h               Show this help text and exit.
 
 Arguments:
   $1  input_path   Path to a single FASTQ/FASTA file, OR a directory
@@ -25,7 +37,11 @@ Outputs (written to <output_dir>/):
   seqkit_stats.tsv          Full seqkit stats table (TSV, all metrics).
   seqkit_stats_summary.txt  Human-readable run summary.
 
-Requirements: seqkit installed in conda environment
+Examples:
+  # Everything under a directory
+  bash seqkit_stats.sh /data/run3588/fastq results/
+  # Only the samples named in samples.txt
+  bash seqkit_stats.sh -l samples.txt /data/run3588/fastq results/
 ```
 
 ### meta-spades.sh
