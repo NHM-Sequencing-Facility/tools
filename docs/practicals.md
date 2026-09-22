@@ -1,6 +1,6 @@
 # Useful Bioinformatics Practicals, Courses, and Resources
 
-## Physalia Bioinformatics course on Variant calling and basic genomic analyses
+## [Physalia Bioinformatics course on Variant calling and basic genomic analyses](https://speciationgroup.github.io/nhm-variant-calling/)
 
 This practical introduces the major steps involved in progressing from raw short-read data to a high-quality variant call set. Written by Dr Tymoteusz Pieszko and Dr Sean Stankowski from University College London.
 
