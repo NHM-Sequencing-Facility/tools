@@ -1,23 +1,8 @@
 # Useful Bioinformatics Practicals, Courses, and Resources
 
-## [Physalia Bioinformatics course on Variant calling and basic genomic analyses](https://speciationgroup.github.io/nhm-variant-calling/)
-
-This practical introduces the major steps involved in progressing from raw short-read data to a high-quality variant call set. Written by Dr Tymoteusz Pieszko and Dr Sean Stankowski from University College London.
-
-**Note:** The datasets are not available at the file paths given in the practical. You can request the raw data from the authors or apply the tutorial to your own dataset.
-
-Topics included:
-- Read QC and trimming
-- Alignment to reference sequence
-- Variant calling
-- Variant filtering
-- Principal component analysis (PCA
-- Genome scans
-  - Estimating genetic differentiation (F<sub>ST</sub>), diversity (p), and divergence (d<sub>XY</sub>) in sliding windows
-
 ## [Bioinformatic Methods for Biodiversity Metabarcoding](https://learnmetabarcoding.github.io/)
 
-In depth tutorial of the processing and analysis of metabarcoding data developped by Dr. Thomas J. Creedy, Dr. Alfried P. Vogler and Liam Penlington.
+Methods for the processing and analysis of metabarcoding data developed by Dr Thomas J. Creedy, Dr Alfried P. Vogler and Liam Penlington.
 
 This tutorial covers the processing of raw metabarcoding reads into Amplicon Sequence Variants (ASVs) and Operational Taxonomic Units (OTUs), ready for downstream analyses such as phylogenetics, biodiversity assessment, and community composition studies.
 
