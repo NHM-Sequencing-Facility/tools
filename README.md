@@ -3,11 +3,11 @@ Collection of tools and scripts for a range of bioinformatics tasks.
 
 ## Docs
 
-#### Useful Bioinformatics Software
+#### Software
 
 A list of software and tools useful for a range of bioinformatics tasks.
 
-#### Useful Bioinformatics Practicals
+#### Practicals
 
 Online tutorials and practicals for a range of bioinformatics applications.
 
