@@ -20,28 +20,43 @@
 # (use --force to remap everything from scratch).
 #
 # ---------------------------------------------------------------------------
-# Samplesheet format (--samplesheet / -s)
+# mapNstat.sh
 #
-#   Plain CSV, three columns, in this order:
+# Runs paired-end reads (fastq/fastq.gz) against a reference sequence using
+# BWA-MEM, then computes mapping statistics using samtools flagstat.
 #
-#     sample,R1,R2
+# Usage:
+#   mkdir -p logs
+#   sbatch mapNstat.sh -r ref.fasta -s samples.csv -o results -e mapping
 #
-#     sample  Unique sample identifier. Used for output filenames, the @RG
-#             ID/SM tags, and the 'sample' column of the summary TSV, so keep
-#             it free of spaces, commas and '/'.
-#     R1      Path to the forward reads  (.fastq or .fastq.gz)
-#     R2      Path to the reverse reads  (.fastq or .fastq.gz)
+# Arguments:
+#   -r    Reference FASTA sequence. Indexed automatically if the index is missing.
+#   -s    Samplesheet CSV with columns: sample,R1,R2
+#           sample  Unique sample ID (no spaces, commas or '/')
+#           R1      Path to forward reads (.fastq or .fastq.gz)
+#           R2      Path to reverse reads (.fastq or .fastq.gz)
+#         Header line is optional. Paths may be absolute or relative to the
+#         submission directory and must not contain commas.
+#   -o    Output directory path
+#   -e    Conda environment containing dependencies (if not already activated)
 #
-#   The header line is optional - a first line beginning with "sample," is
-#   skipped. Blank lines and trailing CRs (\r) are ignored. Column order is
-#   fixed; there is no name-based lookup. Paths may be absolute or relative to
-#   the directory you submit from, and must not themselves contain commas.
+# Dependencies:
+#   Conda environment containing bwa (v0.7.19) and samtools (v1.24)
 #
-#   Example (samples.csv):
+# Outputs:
+#   <outdir>/flagstat/parts/   Per-sample flagstat rows
+#   <outdir>/flagstat_summary.tsv   Combined summary across all samples
 #
-#     sample,R1,R2
-#     NHMUK014000001,/data/raw/NHMUK014000001_R1_001.fastq.gz,/data/raw/NHMUK014000001_R2_001.fastq.gz
-#     NHMUK014000002,/data/raw/NHMUK014000002_R1_001.fastq.gz,/data/raw/NHMUK014000002_R2_001.fastq.gz
+# Notes:
+#   Samples are processed sequentially in a single job — walltime must cover
+#   ALL samples. Check your partition's limit before submitting.
+#   A sample whose output row already exists is skipped, so an interrupted run
+#   can be resubmitted. Use --force to remap everything from scratch.
+#
+# Example samplesheet (samples.csv):
+#   sample,R1,R2
+#   NHMUK014000001,/data/raw/NHMUK014000001_R1_001.fastq.gz,/data/raw/NHMUK014000001_R2_001.fastq.gz
+#   NHMUK014000002,/data/raw/NHMUK014000002_R1_001.fastq.gz,/data/raw/NHMUK014000002_R2_001.fastq.gz
 # ---------------------------------------------------------------------------
 
 set -euo pipefail

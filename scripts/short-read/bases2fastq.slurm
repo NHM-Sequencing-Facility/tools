@@ -6,13 +6,46 @@
 #SBATCH --error=bases2fastq_%x_%j.err
 
 # ============================================================================
-# USAGE
-# ============================================================================
-#   sbatch bases2fastq.sh                          # manifest auto-detected
-#   sbatch bases2fastq.sh /path/to/manifest.csv    # manifest supplied
+# bases2fastq.slurm
 #
-# If no manifest path is given, bases2fastq falls back to its own detection of
-# the run manifest inside the AVITI run folder.
+# Runs ElementBioscience's Bases2Fastq tool to basecall and demultiplex
+# AVITI24 sequence data generated at the NHM. Accepts an optional external
+# RunManifest.csv, or falls back to bases2fastq's own auto-detection.
+#
+# Usage:
+#   sbatch bases2fastq.slurm                        # manifest auto-detected
+#   sbatch bases2fastq.slurm /path/to/manifest.csv  # manifest supplied
+#
+# Arguments:
+#   MANIFEST (optional)  Path to an external run manifest CSV (first positional
+#                        argument). Bind-mounted into the container as a single
+#                        file. If omitted, bases2fastq auto-detects.
+#   INPUT_DIR            Path to raw AVITI24 run output. Must be under /mbl/share.
+#                        Set within the script.
+#   OUTPUT_DIR           Output directory. Must be under /hpc/groups and must not
+#                        already exist as a non-empty directory. Set within the script.
+#
+# SLURM:
+#   --cpus-per-task is passed directly to bases2fastq --num-threads.
+#   Adjust --mem as needed depending on input size.
+#
+# Behaviour:
+#   /mbl/share and /hpc/groups are bind-mounted into the container at /mnt1
+#   and /mnt2; INPUT_DIR/OUTPUT_DIR are rewritten to container paths.
+#   Exits with an error if either path falls outside its expected root.
+#   Refuses to run if OUTPUT_DIR already exists and is non-empty.
+#   The bases2fastq exit code is captured and propagated.
+#
+# Dependencies:
+#   Conda environment 'singularity' with singularity installed.
+#   bases2fastq_[VERSION].sif — path set via the SIF variable in the script.
+#
+# Setup (one-time, run on a local machine with Docker access):
+#   conda activate singularity
+#   singularity pull docker://elembio/bases2fastq
+#   singularity exec bases2fastq_latest.sif bases2fastq --version
+#   mv bases2fastq_latest.sif bases2fastq_[VERSION].sif
+#   # Then move the .sif file to the HPC cluster.
 # ============================================================================
 
 set -euo pipefail
