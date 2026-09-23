@@ -15,7 +15,7 @@ Topics include:
 
 ## [A collection of scripts for a range of genomic data processing and analysis](https://github.com/simonhmartin/genomics_general#diversity-and-divergence-analyses-in-sliding-windows)
 
-A compilation of useful bioiformatic scripts for genomic processing and analyses written by Simon H Martin from the University of Edinburgh.
+A compilation of useful bioiformatic scripts for genomic processing and analyses written by Simon H. Martin from the University of Edinburgh.
 
 This repository covers the essential steps for analysing genetic variation data, from filtering raw variant files through to population-level statistics and phylogenetic trees.
 
