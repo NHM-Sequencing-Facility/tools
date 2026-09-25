@@ -6,8 +6,11 @@ A collection of tools, scripts and documentation for common bioinformatics tasks
 
 - [Documentation](#documentation)
 - [Scripts](#scripts)
+  - [General](#general)
   - [Short-read](#short-read)
   - [Long-read](#long-read)
+
+---
 
 ## Documentation
 
@@ -17,9 +20,20 @@ A collection of tools, scripts and documentation for common bioinformatics tasks
 | **Practicals** | Online tutorials and practicals. |
 | **SOPs** | Standard operating procedures for transferring data, running pipelines, etc. |
 
+---
+
 ## Scripts
 
 Each script is briefly described below. For full usage instructions, see the [short-read README](scripts/short-read/README.md) and the [long-read README](scripts/long-read/README.md).
+
+### General
+
+Scripts for processing various types of data in different ways.
+
+| Script | Description |
+|--------|-------------|
+| `compress.sh` | Archive and compress a directory on the HPC into a single .tar.gz using multi-threaded pigz. |
+| `meta-compress.sh` | Decompress and extract a .tar.gz archive on the HPC using multi-threaded pigz, keeping the original archive. |
 
 ### Short-read
 
