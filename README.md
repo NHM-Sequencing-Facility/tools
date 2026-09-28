@@ -33,7 +33,7 @@ Scripts for processing various types of data in different ways.
 | Script | Description |
 |--------|-------------|
 | `compress.sh` | Archive and compress a directory on the HPC into a single .tar.gz using multi-threaded pigz. |
-| `meta-compress.sh` | Decompress and extract a .tar.gz archive on the HPC using multi-threaded pigz, keeping the original archive. |
+| `decompress.sh` | Decompress and extract a .tar.gz archive on the HPC using multi-threaded pigz, keeping the original archive. |
 
 ### Short-read
 
