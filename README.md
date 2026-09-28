@@ -46,6 +46,7 @@ Scripts for processing short-read sequencing data, typically from Illumina or El
 | `mapNstat.sh` | Maps paired-end reads to a reference with BWA-MEM and reports per-sample mapping statistics with `samtools flagstat`. Takes a samplesheet CSV and processes all samples sequentially in a single job. |
 | `illumina_qc_pipeline.sh` | Takes a raw Illumina run folder through basecalling, adapter and quality trimming, and FastQC/MultiQC reporting before and after trimming. |
 | `bases2fastq.slurm` | Basecalls and demultiplexes raw AVITI24 data from the NHM's Element Biosciences sequencer using Bases2Fastq in a Singularity container. Uses a run manifest if provided, otherwise auto-detects settings. |
+| `bam2assembly.sh` | Takes a co-ordinate sorted BAM file as input, determines per-contig & sliding-window coverage, extracts mapped read pairs, runs SPAdes assembly from the extracted FASTQs, and computes assembly quality (contiguity and completeness). |
 
 ### Long-read
 
