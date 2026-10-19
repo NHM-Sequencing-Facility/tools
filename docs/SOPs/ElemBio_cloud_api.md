@@ -13,7 +13,7 @@ This SOP stores an ElemBio Cloud API key securely on the NHM HPC so it loads on 
 ## One-time setup
 The key lives in a private file that only you can read, and `~/.bashrc` loads it at login. Never paste the key directly into `~/.bashrc`.
 
-1. Create a private directory called `.secrets/`:
+1. Create a private directory called `.secrets/` within your `home/` directory:
 ```bash
 mkdir -p ~/.secrets && chmod 700 ~/.secrets
 ```
