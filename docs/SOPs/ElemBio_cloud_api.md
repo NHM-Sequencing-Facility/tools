@@ -1,6 +1,6 @@
 # SOP: ElemBio Cloud API key setup and run status check
 
-Oct 19, 2026 · @SchistoDan (Dan Parsons)
+Oct 19, 2026 | @SchistoDan (Dan Parsons, NHMUK)
 
 ## Purpose
 This SOP stores an ElemBio Cloud API key securely on the NHM HPC so it loads on every login, then lists recent AVITI runs with their status and headline metrics in one command. The one-time setup takes about 5 minutes.
