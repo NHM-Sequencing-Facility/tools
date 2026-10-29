@@ -25,7 +25,7 @@
 
 set -euo pipefail
 
-# ------- configuration
+# -------------- configuration
 CONDA_ENV="${CONDA_ENV:-[PLACEHOLDER]}"   # conda env containing BBTools
 
 SAMPLE="${1:-}"
@@ -41,7 +41,7 @@ if [[ -z "${SAMPLE}" || -z "${R1_IN}" || -z "${R2_IN}" || -z "${OUTPUT_DIR}" ]];
     exit 1
 fi
 
-# ------- paths
+# -------------- paths
 R1_OUT="${OUTPUT_DIR}/${SAMPLE}/${SAMPLE}_R1_downsampled.fastq"
 R2_OUT="${OUTPUT_DIR}/${SAMPLE}/${SAMPLE}_R2_downsampled.fastq"
 LOG_DIR="${OUTPUT_DIR}/logs/downsample"
@@ -56,7 +56,7 @@ log()  { echo "$*" | tee -a "${LOG_OUT}"; }
 warn() { echo "WARNING: $*" | tee -a "${LOG_OUT}" >&2; }
 die()  { echo "ERROR: $*" | tee -a "${LOG_OUT}" >&2; exit 1; }
 
-# ------- software setup
+# -------------- software setup
 if ! command -v conda > /dev/null 2>&1; then
     die "conda not found on PATH. Load or install conda before submitting."
 fi
@@ -69,7 +69,7 @@ if ! command -v reformat.sh > /dev/null 2>&1; then
     die "reformat.sh not found in conda env '${CONDA_ENV}'. Install BBTools (e.g. conda install -c bioconda bbmap)."
 fi
 
-# ------- memory for JVM
+# -------------- memory for JVM
 # derive from SLURM's allocation (--mem sets SLURM_MEM_PER_NODE,
 # --mem-per-cpu sets SLURM_MEM_PER_CPU); fall back to 8000 MB outside SLURM.
 if [[ -n "${SLURM_MEM_PER_NODE:-}" ]]; then
@@ -81,7 +81,12 @@ else
 fi
 XMX_MB=$(( MEM_MB * 80 / 100 ))
 
-# ------- run
+# -------------- threads
+# match SLURM's CPU allocation so BBTools doesn't auto-detect every core on
+# the node; use 1 thread outside SLURM.
+THREADS="${SLURM_CPUS_PER_TASK:-1}"
+
+# -------------- run
 log "Downsampling raw paired-end reads for ${SAMPLE}"
 log "Started: $(date)"
 log "Conda env: ${CONDA_ENV}"
@@ -90,6 +95,7 @@ log "R2 in: ${R2_IN}"
 log "Target read pairs: ${MAX_READS}"
 log "Seed: ${SAMPLE_SEED}"
 log "JVM heap: ${XMX_MB}m of ${MEM_MB}m allocated"
+log "Threads: ${THREADS}"
 
 # Check if either input file is empty or missing
 if [ ! -s "${R1_IN}" ] || [ ! -s "${R2_IN}" ]; then
@@ -101,6 +107,7 @@ if [ ! -s "${R1_IN}" ] || [ ! -s "${R2_IN}" ]; then
 fi
 
 reformat.sh -Xmx${XMX_MB}m -eoom \
+            threads="${THREADS}" \
             in1="${R1_IN}" \
             in2="${R2_IN}" \
             out1="${R1_OUT}" \
