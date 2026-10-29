@@ -167,3 +167,60 @@ How to run it - e.g.:
 
 [written by Silvia Salatino]
 ```
+
+### bam2assembly.sh
+```
+Takes a mapped, sorted BAM for a single sample and runs a coverage summary, mapped-read
+extraction, de novo assembly (SPAdes) and assembly QC (QUAST + BUSCO):
+  1. Per-contig and sliding-window coverage of the BAM (samtools coverage / bedcov)
+  2. Extract read pairs where both mates are mapped and write paired FASTQs
+     (skipped if the FASTQs already exist in OUTDIR)
+  3. SPAdes assembly from the extracted FASTQs
+  4. QUAST assembly statistics (optionally against a reference)
+  5. BUSCO completeness assessment
+
+Usage:
+    sbatch bam2assembly.sh
+
+Arguments:
+    All inputs are set in the 'User config' block of the script itself:
+      INPUT_BAM        Sorted, indexed BAM of reads mapped to a reference (sole input)
+      OUTDIR           Output directory (created if absent)
+      SAMPLE           Sample ID, used as a prefix for all outputs
+      WINDOW_SIZE      Sliding window size (bp) for coverage (default: 10000)
+      REFERENCE_FASTA  Optional reference FASTA (.fa/.fna, gz OK) passed to QUAST -r.
+                       Leave "" to run QUAST without a reference
+      BUSCO_LINEAGE    BUSCO lineage dataset appropriate for your organism (e.g. mammalia_odb10)
+      SPADES_ENV       Conda env containing SPAdes + samtools
+      ASSESS_ENV       Conda env containing QUAST + BUSCO
+
+Outputs (written to OUTDIR):
+    <SAMPLE>.coverage_summary.txt          Per-contig coverage (samtools coverage)
+    <SAMPLE>.sliding_window_coverage.tsv   Mean depth per window (chrom, start, end, mean_depth)
+    <SAMPLE>.mapped_pairs.bam              Reads where both mates are mapped
+    <SAMPLE>.mapped_R1.fastq.gz            Extracted forward reads
+    <SAMPLE>.mapped_R2.fastq.gz            Extracted reverse reads
+    spades_assembly/                       SPAdes output (scaffolds.fasta is used downstream)
+    quast_output/                          QUAST report (report.txt)
+    <SAMPLE>_busco/                        BUSCO results
+    Intermediates kept: <SAMPLE>.chrom_sizes.txt, .windows.bed, .windows_rawcov.tsv
+
+SLURM:
+    --cpus-per-task is passed as the thread count to samtools, SPAdes, QUAST and BUSCO
+    (falls back to 4 if unset).
+    Adjust --mem as needed. SPAdes on large genomes may need considerably more than 64G.
+    Set --partition to your cluster's partition name.
+
+Behaviour notes:
+    Read extraction uses samtools view -F 12, which drops any read that is unmapped or whose
+    mate is unmapped. Reads are then collated and exported with samtools fastq, which excludes
+    secondary/supplementary alignments by default. Singletons are discarded.
+    If both mapped FASTQs already exist in OUTDIR, extraction is skipped. This means the script
+    can be re-run after a failed assembly without repeating step 2.
+    The script exits with an error if the mapped FASTQs are missing or empty before assembly.
+    BUSCO runs with -f, so existing BUSCO output for the same sample is overwritten.
+
+Dependencies:
+    Conda env containing SPAdes and samtools (SPADES_ENV)
+    Conda env containing QUAST and BUSCO (ASSESS_ENV)
+```
