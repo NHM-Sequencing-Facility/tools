@@ -224,3 +224,57 @@ Dependencies:
     Conda env containing SPAdes and samtools (SPADES_ENV)
     Conda env containing QUAST and BUSCO (ASSESS_ENV)
 ```
+
+### downsample_pe.sh
+```
+Randomly downsamples a pair of raw paired-end FASTQ files to a fixed number of read pairs
+using BBTools reformat.sh. Subsampling is seeded, so it can be reproduced.
+
+Usage:
+    sbatch downsample_pe.sh <sample> <R1> <R2> <output_dir> [max_reads] [seed]
+
+Arguments:
+    sample        Sample ID, used for the output subdirectory, filenames and log names
+    R1            Path to forward (R1) FASTQ file (.fastq or .fastq.gz)
+    R2            Path to reverse (R2) FASTQ file (.fastq or .fastq.gz)
+    output_dir    Directory to write results into (created if absent)
+    max_reads     Optional. Number of read PAIRS to keep (default: 100000)
+    seed          Optional. Random seed for subsampling (default: 12345)
+
+Outputs (uncompressed FASTQ; existing files are overwritten):
+    <output_dir>/<sample>/<sample>_R1_downsampled.fastq
+    <output_dir>/<sample>/<sample>_R2_downsampled.fastq
+    <output_dir>/logs/downsample/<sample>.out    Run summary and reformat.sh stdout
+    <output_dir>/logs/downsample/<sample>.err    reformat.sh stderr
+
+SLURM:
+    --cpus-per-task is passed to reformat.sh as threads=, so BBTools uses only the CPUs it was
+    given rather than auto-detecting every core on the node. It falls back to 1 thread when
+    run outside SLURM.
+    Adjust --mem as needed. The JVM heap (-Xmx) is set to 80% of the SLURM memory
+    allocation (from --mem or --mem-per-cpu x --cpus-per-task). It falls back to 8000 MB
+    when run outside SLURM.
+    Set --partition to your cluster's partition name.
+
+Behaviour notes:
+    If either input file is missing or empty, the script writes empty placeholder outputs,
+    logs a warning and exits 0. This lets it run inside workflows without stopping the
+    whole batch for one empty sample.
+    If an input has fewer than max_reads pairs, all of its reads are kept.
+    The script exits with an error if conda or reformat.sh can't be found, if the conda env
+    can't be activated, or if reformat.sh fails.
+    The .out log is cleared at the start of each run. The .err log is appended to.
+
+Dependencies:
+    Conda env containing BBTools (reformat.sh), e.g. conda install -c bioconda bbmap.
+    Set CONDA_ENV in the script, or override it at submission:
+        CONDA_ENV=myenv sbatch downsample_pe.sh ...
+
+Example:
+    sbatch downsample_pe.sh \
+        UK006 \
+        UK006_R1.fastq.gz \
+        UK006_R2.fastq.gz \
+        downsampled/ \
+        500000 12345
+```
