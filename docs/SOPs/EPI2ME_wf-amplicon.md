@@ -14,6 +14,8 @@ wf-amplicon builds one consensus sequence per barcode from ONT reads of **haploi
 Everything except your run script and its outputs is shared and maintained centrally: Nextflow, the workflow code (pinned at v1.2.2) and its software containers. You never install anything yourself.
 
 ## Before you start
+The current version of the workflow can be found in `/hpc/groups/mbl-group/ont/epi2me/workflows/wf-amplicon_vX.X.X`, demo test data in `/hpc/groups/mbl-group/ont/epi2me/tests/wf-amplicon-demo/`, and template scripts and sample sheets in `/hpc/groups/mbl-group/ont/epi2me/templates/`.
+
 You must have an NHM HPC account with MBL group permissions (`dg-mbl-mbl-group-rw`).
 
 ## Step 1 - First-time test run on the demo data
@@ -43,11 +45,11 @@ The last lines of a good run look like this:
 ```text
 [c0/4d4b1d] Submitted process > publish (8)
 
-Finished. Report: /hpc/groups/mbl-group/ont/outputs/demo_test_<user>/wf-amplicon-report.html
-Consensus sequences: 2 in /hpc/groups/mbl-group/ont/outputs/demo_test_<user>/all-consensus-seqs.fasta
+Finished. Report: /hpc/groups/mbl-group/ont/outputs/<RUN_NAME>/wf-amplicon-report.html
+Consensus sequences: 2 in /hpc/groups/mbl-group/ont/outputs/<RUN_NAME>/all-consensus-seqs.fasta
 ```
 
-You should see `wf-amplicon-report.html`, `all-consensus-seqs.fasta`, one folder per barcode and an `execution/` folder. If instead the log ends with `ERROR`, please seek support before proceeding further.
+You should see `wf-amplicon-report.html`, `all-consensus-seqs.fasta`, one folder per barcode and an `execution/` folder. If instead the log ends with `ERROR`, please seek support before proceeding further. There is a demo data output directory (`/hpc/groups/mbl-group/ont/epi2me/tests/wf-amplicon-demo/`) you can compare your test results to. Please delete your demo test data run from `/hpc/groups/mbl-group/ont/outputs/` when you are satisified the run completed correctly.
 
 ## Step 3 - Run your own data
 1. Edit the `EDIT ME` block in `run_wf-amplicon.sh`. Only `RUN_NAME` and `FASTQ` are required; anything left `""` uses the workflow default:
