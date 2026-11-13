@@ -139,8 +139,45 @@ Barcodes missing from `all-consensus-seqs.fasta` either had too few reads (`--mi
 
 
 
-## Notes for maintainers
+## Sample suitability and checks
 
+wf-amplicon always reports **one consensus per barcode, built from whichever template has the most reads**. It never reports that a sample contained more than one sequence. That makes it reliable for single-specimen barcoding where the target dominates. It also means some failures produce a clean, QC-passing consensus that is wrong. The checks below catch most of them.
+
+### What the workflow is suited to
+
+| Sample / marker | Suitable? | Main risk |
+| --- | --- | --- |
+| Single specimen, mitochondrial marker (COI, cytb, 12S, 16S mt) | Yes | Contamination or NUMTs (below) |
+| Single specimen with some contamination (e.g. tank-held, gut contents, epibionts, parasites) | Yes, with the checks below | Contaminant dominates, or a mosaic of close relatives |
+| Single specimen, nuclear marker (ITS, 18S/28S, H3, EF1α) in a diploid organism | Yes, for identification only | Heterozygous sites hidden; consensus may mix the two alleles |
+| Bulk, pooled or community samples (metabarcoding, 16S/ITS surveys) | **No** | Only the most abundant sequence is reported |
+| Several different amplicons pooled in one barcode | **No** in de novo mode | Use variant-calling mode with a reference, or separate barcodes |
+
+### Mixed-sources of DNA
+- **The contaminant dominates.** This can happen with low-input or degraded tissue, primers that match the contaminant better, or gut contents, parasites and epibionts. The result is a clean consensus of the wrong organism, and QC will not flag it.
+- **Close relatives at similar levels**, e.g. congeners from the same collection (e.g. stored in the same tnak), or the target plus a NUMT (a nuclear copy of the mitochondrial gene). The consensus can switch between the two templates by base, giving a mosaic sequence that may still pass QC.
+- **A longer off-target product.** By default the workflow drops the longest 5% of reads, then keeps the longest of the rest. A product longer than your amplicon can therefore be over-represented in the reads used.
+- **Distant contaminants** (e.g. other phyla) are mostly harmless to the consensus, because their reads fail to map to it. They show up as unmapped reads instead.
+
+### Diploid organisms and nuclear markers
+Mitochondrial markers are haploid, so this does not apply to them.
+
+For nuclear markers in diploid organisms, the consensus is built with a haploid model. At each heterozygous site it picks whichever allele has more reads. With alleles near 50:50, that pick is independent at each site, so the consensus can combine alleles from both copies into a sequence that may not exist in the organism. Unlike Sanger double peaks, nothing is flagged here: the consensus contains no IUPAC ambiguity codes. Heterozygous indels and variation between rDNA copies (common in ITS) tend to cause local errors or QC failures instead.
+
+The consensus is fine for species-level identification. Do **not** use it for haplotype-level or population-genetic analyses. If heterozygosity matters for a project, discuss it with the maintainer before sequencing.
+
+### Checks for every run
+1. **Include a negative control on the plate.** A consensus from a negative control means contamination in the lab or reagents.
+2. **Check every consensus against the expected identification.** Run `all-consensus-seqs.fasta` through the BOLD identification engine or BLASTn, and compare each hit with the specimen's morphological or expected ID. This is the only check that catches a contaminant consensus. Treat mismatches as contamination until evidence otherwise.
+3. **Check the unmapped reads per barcode** in the report's *Re-alignment summary*. A barcode with a much higher unmapped percentage than the rest of the plate had a substantial second template. Its consensus may be the wrong one, or a mosaic.
+4. **Review QC failures** in the report's *Quality Control* section. A consensus that failed on primary alignments (under 70%) often points to a mixture or repetitive sequence, not just low yield.
+
+### When a sample fails these checks
+- **Wrong organism or a suspected mixture:** re-extract if possible (fresh tissue, more input, extra surface cleaning), or re-amplify with taxon-specific primers.
+- **You need to see every sequence present:** wf-amplicon cannot do this. A read-clustering tool (e.g. NGSpeciesID, Amplicon_sorter, ONTbarcoder) reports one consensus per cluster, with read counts. These work best with full-length reads. The rapid kit fragments amplicons, so plan native (ligation) barcoding for samples where this matters.
+
+
+## Notes for maintainers
 Users can skip this section. The install is pinned and locally patched. Change it only deliberately, then re-run the demo test (Step 1) before telling users.
 
 - **Versions:** Nextflow 25.10.4 + OpenJDK 17 in `epi2me/envs/nextflow`; wf-amplicon v1.2.2 in `epi2me/workflows/wf-amplicon_v1.2.2` (read-only). The run template sets `NXF_SYNTAX_PARSER=v1`, which v1.2.2 needs.
